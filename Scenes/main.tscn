@@ -2,11 +2,9 @@
 
 [ext_resource type="Script" uid="uid://b4ogyf4kf60lu" path="res://Scripts/boidSpawner.gd" id="1_bo1nx"]
 
-[sub_resource type="MultiMesh" id="MultiMesh_jjgbg"]
-resource_local_to_scene = true
-transform_format = 1
+[sub_resource type="BoxMesh" id="BoxMesh_jjgbg"]
 
-[node name="Main" type="MultiMeshInstance3D"]
-multimesh = SubResource("MultiMesh_jjgbg")
+[node name="Main" type="Node3D"]
 script = ExtResource("1_bo1nx")
-count = 3
+bounds = Vector3(10, 10, 10)
+mesh = SubResource("BoxMesh_jjgbg")
