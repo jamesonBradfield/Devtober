@@ -33,3 +33,58 @@ static func generate_random_velocity(max_speed: float) -> Vector3:
 		randf_range(-max_speed, max_speed),
 		randf_range(-max_speed, max_speed)
 	)
+
+
+## Creates a sphere collision shape for a boid
+static func create_boid_body(
+	space_rid: RID, position: Vector3, radius: float, collision_layer: int, collision_mask: int
+) -> Dictionary:
+	var body_rid = PhysicsServer3D.body_create()
+	PhysicsServer3D.body_set_mode(body_rid, PhysicsServer3D.BODY_MODE_KINEMATIC)
+	PhysicsServer3D.body_set_space(body_rid, space_rid)
+
+	var shape_rid = PhysicsServer3D.sphere_shape_create()
+	PhysicsServer3D.shape_set_data(shape_rid, radius)
+	PhysicsServer3D.body_add_shape(body_rid, shape_rid)
+
+	var transform = Transform3D(Basis.IDENTITY, position)
+	PhysicsServer3D.body_set_state(body_rid, PhysicsServer3D.BODY_STATE_TRANSFORM, transform)
+
+	PhysicsServer3D.body_set_collision_layer(body_rid, collision_layer)
+	PhysicsServer3D.body_set_collision_mask(body_rid, collision_mask)
+
+	return {"body_rid": body_rid, "shape_rid": shape_rid}
+
+
+## Updates boid body position
+static func update_boid_body_position(body_rid: RID, position: Vector3) -> void:
+	var transform = Transform3D(Basis.IDENTITY, position)
+	PhysicsServer3D.body_set_state(body_rid, PhysicsServer3D.BODY_STATE_TRANSFORM, transform)
+
+
+## Queries nearby bodies using sphere intersection
+static func find_neighbors_physics(
+	space_rid: RID, position: Vector3, radius: float, exclude_rid: RID, collision_mask: int
+) -> Array[RID]:
+	var query = PhysicsShapeQueryParameters3D.new()
+
+	var shape = SphereShape3D.new()
+	shape.radius = radius
+	query.shape = shape
+	query.transform = Transform3D(Basis.IDENTITY, position)
+	query.collision_mask = collision_mask
+	query.exclude = [exclude_rid]
+
+	var results = PhysicsServer3D.space_get_direct_state(space_rid).intersect_shape(query)
+
+	var neighbor_rids: Array[RID] = []
+	for result in results:
+		neighbor_rids.append(result["rid"])
+
+	return neighbor_rids
+
+
+## Cleans up physics body
+static func destroy_boid_body(body_rid: RID, shape_rid: RID) -> void:
+	PhysicsServer3D.free_rid(body_rid)
+	PhysicsServer3D.free_rid(shape_rid)
