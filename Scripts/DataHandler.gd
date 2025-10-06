@@ -10,6 +10,9 @@ var boid_body_rids: Array[RID] = []
 var boid_shape_rids: Array[RID] = []
 var rid_to_index: Dictionary = {}
 
+var neighbor_query: PhysicsShapeQueryParameters3D
+var neighbor_sphere: SphereShape3D
+
 @export var boid_mesh: Mesh
 @export var instance_count: int = 1000
 @export var boid_collision_radius: float = 0.5
@@ -67,28 +70,35 @@ func _ready() -> void:
 		alignment_perception_radius, maxf(separation_perception_radius, cohesion_perception_radius)
 	)
 	MeshHandler.set_visible_instance_count(multimesh_rid, visible_instance_count)
+
+	neighbor_sphere = SphereShape3D.new()
+	neighbor_sphere.radius = max_perception_radius
+	neighbor_query = PhysicsShapeQueryParameters3D.new()
+	neighbor_query.shape = neighbor_sphere
+	neighbor_query.collision_mask = BOID_COLLISION_MASK
+
 	initialize_boids()
 
 
 func _process(delta: float) -> void:
-	var transforms = MeshHandler.get_all_transforms(multimesh_rid, visible_instance_count)
+	var all_transforms: Array[Transform3D] = []
+	all_transforms.resize(visible_instance_count)
 
 	for i in range(visible_instance_count):
+		all_transforms[i] = PhysicsHandler.get_body_transform(boid_body_rids[i])
+
+	for i in range(visible_instance_count):
+		var current_transform = all_transforms[i]
 		var current_velocity = PhysicsHandler.get_body_velocity(boid_body_rids[i])
 
-		var neighbor_rids = PhysicsHandler.find_neighbors_physics(
-			space_rid,
-			transforms[i].origin,
-			max_perception_radius,
-			boid_body_rids[i],
-			BOID_COLLISION_MASK
+		var neighbor_rids = PhysicsHandler.find_neighbors_with_query(
+			space_rid, neighbor_query, current_transform.origin, boid_body_rids[i]
 		)
 
 		var neighbors: Array[int] = []
 		for rid in neighbor_rids:
 			if !rid_to_index.has(rid):
 				continue
-
 			neighbors.append(rid_to_index[rid])
 
 		var neighbor_velocities: Array[Vector3] = []
@@ -98,15 +108,19 @@ func _process(delta: float) -> void:
 			)
 
 		var separation_force = BoidHandler.calculate_separation(
-			transforms[i].origin,
-			transforms,
+			current_transform.origin,
+			all_transforms,
 			neighbors,
 			separation_perception_radius,
 			separation_weight
 		)
 
 		var cohesion_force = BoidHandler.calculate_cohesion(
-			transforms[i].origin, transforms, neighbors, cohesion_perception_radius, cohesion_weight
+			current_transform.origin,
+			all_transforms,
+			neighbors,
+			cohesion_perception_radius,
+			cohesion_weight
 		)
 
 		var alignment_force = BoidHandler.calculate_alignment(
@@ -121,9 +135,11 @@ func _process(delta: float) -> void:
 
 		PhysicsHandler.set_body_velocity(boid_body_rids[i], new_velocity)
 
-		transforms[i] = PhysicsHandler.apply_velocity(transforms[i], new_velocity, delta)
+		var new_transform = PhysicsHandler.apply_velocity(current_transform, new_velocity, delta)
+		new_transform.origin = PhysicsHandler.apply_bounds_wrap(new_transform.origin, bounds)
 
-		MeshHandler.set_transform(multimesh_rid, i, transforms[i])
+		PhysicsHandler.set_body_transform(boid_body_rids[i], new_transform)
+		MeshHandler.set_transform(multimesh_rid, i, new_transform)
 
 
 func initialize_boids() -> void:
