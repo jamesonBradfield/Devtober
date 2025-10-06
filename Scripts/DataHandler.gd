@@ -65,6 +65,9 @@ func _ready() -> void:
 	multimesh_rid = result["multimesh_rid"]
 	instance_rid = result["instance_rid"]
 
+	max_perception_radius = maxf(
+		alignment_perception_radius, maxf(separation_perception_radius, cohesion_perception_radius)
+	)
 	MeshHandler.set_visible_instance_count(multimesh_rid, visible_instance_count)
 	initialize_boids()
 
