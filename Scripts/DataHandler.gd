@@ -121,6 +121,8 @@ func _process(delta: float) -> void:
 
 		PhysicsHandler.set_body_velocity(boid_body_rids[i], new_velocity)
 
+		transforms[i] = PhysicsHandler.apply_velocity(transforms[i], new_velocity, delta)
+
 		MeshHandler.set_transform(multimesh_rid, i, transforms[i])
 
 

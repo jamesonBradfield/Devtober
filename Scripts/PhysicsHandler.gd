@@ -55,9 +55,9 @@ static func create_boid_body(
 	space_rid: RID, position: Vector3, radius: float, collision_layer: int, collision_mask: int
 ) -> Dictionary:
 	var body_rid = PhysicsServer3D.body_create()
-	PhysicsServer3D.body_set_mode(body_rid, PhysicsServer3D.BODY_MODE_KINEMATIC)
+	PhysicsServer3D.body_set_mode(body_rid, PhysicsServer3D.BODY_MODE_RIGID)
 	PhysicsServer3D.body_set_space(body_rid, space_rid)
-
+	PhysicsServer3D.body_set_param(body_rid, PhysicsServer3D.BODY_PARAM_GRAVITY_SCALE, 0)
 	var shape_rid = PhysicsServer3D.sphere_shape_create()
 	PhysicsServer3D.shape_set_data(shape_rid, radius)
 	PhysicsServer3D.body_add_shape(body_rid, shape_rid)
@@ -69,11 +69,6 @@ static func create_boid_body(
 	PhysicsServer3D.body_set_collision_mask(body_rid, collision_mask)
 
 	return {"body_rid": body_rid, "shape_rid": shape_rid}
-
-
-static func update_boid_body_position(body_rid: RID, position: Vector3) -> void:
-	var transform = Transform3D(Basis.IDENTITY, position)
-	PhysicsServer3D.body_set_state(body_rid, PhysicsServer3D.BODY_STATE_TRANSFORM, transform)
 
 
 static func find_neighbors_physics(
