@@ -2,6 +2,22 @@
 class_name PhysicsHandler
 
 
+static func get_body_velocity(body_rid: RID) -> Vector3:
+	return PhysicsServer3D.body_get_state(body_rid, PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY)
+
+
+static func set_body_velocity(body_rid: RID, velocity: Vector3) -> void:
+	PhysicsServer3D.body_set_state(body_rid, PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY, velocity)
+
+
+static func get_body_transform(body_rid: RID) -> Transform3D:
+	return PhysicsServer3D.body_get_state(body_rid, PhysicsServer3D.BODY_STATE_TRANSFORM)
+
+
+static func set_body_transform(body_rid: RID, transform: Transform3D) -> void:
+	PhysicsServer3D.body_set_state(body_rid, PhysicsServer3D.BODY_STATE_TRANSFORM, transform)
+
+
 static func update_velocity(
 	current_velocity: Vector3, acceleration: Vector3, delta: float, max_speed: float
 ) -> Vector3:
@@ -35,7 +51,6 @@ static func generate_random_velocity(max_speed: float) -> Vector3:
 	)
 
 
-## Creates a sphere collision shape for a boid
 static func create_boid_body(
 	space_rid: RID, position: Vector3, radius: float, collision_layer: int, collision_mask: int
 ) -> Dictionary:
@@ -56,13 +71,11 @@ static func create_boid_body(
 	return {"body_rid": body_rid, "shape_rid": shape_rid}
 
 
-## Updates boid body position
 static func update_boid_body_position(body_rid: RID, position: Vector3) -> void:
 	var transform = Transform3D(Basis.IDENTITY, position)
 	PhysicsServer3D.body_set_state(body_rid, PhysicsServer3D.BODY_STATE_TRANSFORM, transform)
 
 
-## Queries nearby bodies using sphere intersection
 static func find_neighbors_physics(
 	space_rid: RID, position: Vector3, radius: float, exclude_rid: RID, collision_mask: int
 ) -> Array[RID]:
@@ -84,7 +97,6 @@ static func find_neighbors_physics(
 	return neighbor_rids
 
 
-## Cleans up physics body
 static func destroy_boid_body(body_rid: RID, shape_rid: RID) -> void:
 	PhysicsServer3D.free_rid(body_rid)
 	PhysicsServer3D.free_rid(shape_rid)

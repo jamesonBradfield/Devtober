@@ -14,8 +14,6 @@ var rid_to_index: Dictionary = {}
 @export var instance_count: int = 1000
 @export var boid_collision_radius: float = 0.5
 @export var visible_instance_count: int = 1000
-var velocity_array: Array[Vector3]
-var acceleration_array: Array[Vector3]
 @export var bounds: Vector3 = Vector3(100.0, 100.0, 100.0)
 @export var max_speed: float = 5.0
 @export var alignment_perception_radius: float = 10.0:
@@ -76,9 +74,8 @@ func _process(delta: float) -> void:
 	var transforms = MeshHandler.get_all_transforms(multimesh_rid, visible_instance_count)
 
 	for i in range(visible_instance_count):
-		PhysicsHandler.update_boid_body_position(boid_body_rids[i], transforms[i].origin)
+		var current_velocity = PhysicsHandler.get_body_velocity(boid_body_rids[i])
 
-	for i in range(visible_instance_count):
 		var neighbor_rids = PhysicsHandler.find_neighbors_physics(
 			space_rid,
 			transforms[i].origin,
@@ -89,8 +86,16 @@ func _process(delta: float) -> void:
 
 		var neighbors: Array[int] = []
 		for rid in neighbor_rids:
-			if rid_to_index.has(rid):
-				neighbors.append(rid_to_index[rid])
+			if !rid_to_index.has(rid):
+				continue
+
+			neighbors.append(rid_to_index[rid])
+
+		var neighbor_velocities: Array[Vector3] = []
+		for neighbor_index in neighbors:
+			neighbor_velocities.append(
+				PhysicsHandler.get_body_velocity(boid_body_rids[neighbor_index])
+			)
 
 		var separation_force = BoidHandler.calculate_separation(
 			transforms[i].origin,
@@ -105,27 +110,21 @@ func _process(delta: float) -> void:
 		)
 
 		var alignment_force = BoidHandler.calculate_alignment(
-			velocity_array[i],
-			velocity_array,
-			neighbors,
-			alignment_perception_radius,
-			alignment_weight
+			current_velocity, neighbor_velocities, alignment_perception_radius, alignment_weight
 		)
 
-		acceleration_array[i] = separation_force + cohesion_force + alignment_force
+		var acceleration = separation_force + cohesion_force + alignment_force
 
-		velocity_array[i] = PhysicsHandler.update_velocity(
-			velocity_array[i], acceleration_array[i], delta, max_speed
+		var new_velocity = PhysicsHandler.update_velocity(
+			current_velocity, acceleration, delta, max_speed
 		)
 
-		transforms[i] = PhysicsHandler.apply_velocity(transforms[i], velocity_array[i], delta)
+		PhysicsHandler.set_body_velocity(boid_body_rids[i], new_velocity)
 
 		MeshHandler.set_transform(multimesh_rid, i, transforms[i])
 
 
 func initialize_boids() -> void:
-	velocity_array.clear()
-	acceleration_array.clear()
 	boid_body_rids.clear()
 	boid_shape_rids.clear()
 	rid_to_index.clear()
@@ -135,8 +134,7 @@ func initialize_boids() -> void:
 
 		MeshHandler.set_transform(multimesh_rid, i, Transform3D().translated(random_position))
 
-		velocity_array.append(PhysicsHandler.generate_random_velocity(max_speed))
-		acceleration_array.append(Vector3.ZERO)
+		var random_velocity = PhysicsHandler.generate_random_velocity(max_speed)
 
 		var body_data = PhysicsHandler.create_boid_body(
 			space_rid,
@@ -149,6 +147,8 @@ func initialize_boids() -> void:
 		boid_body_rids.append(body_data["body_rid"])
 		boid_shape_rids.append(body_data["shape_rid"])
 		rid_to_index[body_data["body_rid"]] = i
+
+		PhysicsHandler.set_body_velocity(body_data["body_rid"], random_velocity)
 
 
 func _exit_tree() -> void:

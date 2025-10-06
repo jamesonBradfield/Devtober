@@ -2,22 +2,6 @@
 class_name BoidHandler
 
 
-static func find_neighbors(
-	position: Vector3, all_transforms: Array[Transform3D], self_index: int, max_radius: float
-) -> Array[int]:
-	var neighbors: Array[int] = []
-
-	for i in range(all_transforms.size()):
-		if i == self_index:
-			continue
-
-		var distance = position.distance_to(all_transforms[i].origin)
-		if distance <= max_radius:
-			neighbors.append(i)
-
-	return neighbors
-
-
 static func calculate_separation(
 	boid_position: Vector3,
 	all_transforms: Array[Transform3D],
@@ -72,20 +56,16 @@ static func calculate_cohesion(
 
 
 static func calculate_alignment(
-	boid_velocity: Vector3,
-	all_velocities: Array[Vector3],
-	neighbors: Array[int],
-	radius: float,
-	weight: float
+	boid_velocity: Vector3, neighbor_velocities: Array[Vector3], radius: float, weight: float
 ) -> Vector3:
-	var average_velocity = Vector3.ZERO
-	var count = neighbors.size()
+	var count = neighbor_velocities.size()
 
 	if count == 0:
 		return Vector3.ZERO
 
-	for neighbor_index in neighbors:
-		average_velocity += all_velocities[neighbor_index]
+	var average_velocity = Vector3.ZERO
+	for velocity in neighbor_velocities:
+		average_velocity += velocity
 
 	average_velocity /= count
 	return (average_velocity - boid_velocity).normalized() * weight
