@@ -142,8 +142,25 @@ func _process(delta: float) -> void:
 		var new_transform: Transform3D
 		new_transform.origin = current_transform.origin + new_velocity * delta
 
-		new_transform.origin = PhysicsHandler.apply_bounds_wrap(new_transform.origin, bounds)
+		var half_bounds = bounds / 2.0
+		var wrapped_position = new_transform.origin
 
+		if wrapped_position.x > half_bounds.x:
+			wrapped_position.x = -half_bounds.x
+		elif wrapped_position.x < -half_bounds.x:
+			wrapped_position.x = half_bounds.x
+
+		if wrapped_position.y > half_bounds.y:
+			wrapped_position.y = -half_bounds.y
+		elif wrapped_position.y < -half_bounds.y:
+			wrapped_position.y = half_bounds.y
+
+		if wrapped_position.z > half_bounds.z:
+			wrapped_position.z = -half_bounds.z
+		elif wrapped_position.z < -half_bounds.z:
+			wrapped_position.z = half_bounds.z
+
+		new_transform.origin = wrapped_position
 		PhysicsServer3D.body_set_state(
 			boid_body_rids[index], PhysicsServer3D.BODY_STATE_TRANSFORM, new_transform
 		)
