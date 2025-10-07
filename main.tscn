@@ -152,7 +152,6 @@ text = "Visible Instances: 0"
 [node name="DataHandler" type="Node3D" parent="."]
 script = ExtResource("2_0xm2m")
 boid_mesh = SubResource("BoxMesh_0xm2m")
-instance_count = 5000
 boid_collision_radius = 1.0
 max_speed = 20.0
 alignment_perception_radius = 17.0
