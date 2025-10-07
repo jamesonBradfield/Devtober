@@ -128,14 +128,13 @@ func _physics_process(delta: float) -> void:
 
 		var acceleration = separation_force + cohesion_force + alignment_force
 
-		var new_velocity = velocity_array[index] + (acceleration * delta)
+		velocity_array[index] = (
+			velocity_array[index] + (acceleration * delta)
+			if velocity_array[index].length() > max_speed
+			else velocity_array[index].normalized() * max_speed
+		)
 
-		if new_velocity.length() > max_speed:
-			new_velocity = new_velocity.normalized() * max_speed
-
-		velocity_array[index] = new_velocity
-
-		all_transforms[index].origin = all_transforms[index].origin + new_velocity * delta
+		all_transforms[index].origin = all_transforms[index].origin + velocity_array[index] * delta
 
 		var half_bounds = bounds / 2.0
 		var wrapped_position = all_transforms[index].origin
@@ -164,28 +163,26 @@ func _physics_process(delta: float) -> void:
 func _process(delta: float) -> void:
 	var buffer: PackedFloat32Array
 	buffer.resize(visible_instance_count * 12)
+
 	for index in range(visible_instance_count):
+		var offset = index * 12
 		var _basis = all_transforms[index].basis
 		var _origin = all_transforms[index].origin
-		var _buffer: PackedFloat32Array = PackedFloat32Array(
-			[
-				_basis.x.x,
-				_basis.y.x,
-				_basis.z.x,
-				_origin.x,
-				_basis.x.y,
-				_basis.y.y,
-				_basis.z.y,
-				_origin.y,
-				_basis.x.z,
-				_basis.y.z,
-				_basis.z.z,
-				_origin.z
-			]
-		)
-		buffer.append_array(_buffer)
 
-	RenderingServer.multimesh_set_buffer(multimesh_rid, buffer)
+		buffer[offset + 0] = _basis.x.x
+		buffer[offset + 1] = _basis.y.x
+		buffer[offset + 2] = _basis.z.x
+		buffer[offset + 3] = _origin.x
+		buffer[offset + 4] = _basis.x.y
+		buffer[offset + 5] = _basis.y.y
+		buffer[offset + 6] = _basis.z.y
+		buffer[offset + 7] = _origin.y
+		buffer[offset + 8] = _basis.x.z
+		buffer[offset + 9] = _basis.y.z
+		buffer[offset + 10] = _basis.z.z
+		buffer[offset + 11] = _origin.z
+
+		RenderingServer.multimesh_set_buffer(multimesh_rid, buffer)
 
 
 func initialize_boids() -> void:
