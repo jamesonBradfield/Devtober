@@ -40,9 +40,3 @@ static func get_all_transforms(multimesh_rid: RID, count: int) -> Array[Transfor
 		transforms[i] = RenderingServer.multimesh_instance_get_transform(multimesh_rid, i)
 
 	return transforms
-
-
-## Cleans up rendering server resources
-static func destroy_multimesh(multimesh_rid: RID, instance_rid: RID) -> void:
-	RenderingServer.free_rid(instance_rid)
-	RenderingServer.free_rid(multimesh_rid)

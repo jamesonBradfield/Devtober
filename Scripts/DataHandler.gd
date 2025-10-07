@@ -13,6 +13,10 @@ var rid_to_index: Dictionary = {}
 var neighbor_query: PhysicsShapeQueryParameters3D
 var neighbor_sphere: SphereShape3D
 
+var velocity_array: Array[Vector3]
+
+var all_transforms: Array[Transform3D] = []
+
 @export var boid_mesh: Mesh
 @export var instance_count: int = 1000
 @export var boid_collision_radius: float = 0.5
@@ -81,19 +85,20 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	var all_transforms: Array[Transform3D] = []
-	all_transforms.resize(visible_instance_count)
+	for index in range(visible_instance_count):
+		var current_transform = all_transforms[index]
+		var current_velocity = velocity_array[index]
 
-	for i in range(visible_instance_count):
-		all_transforms[i] = PhysicsHandler.get_body_transform(boid_body_rids[i])
+		neighbor_query.transform = Transform3D(Basis.IDENTITY, current_transform.origin)
+		neighbor_query.exclude = [boid_body_rids[index]]
 
-	for i in range(visible_instance_count):
-		var current_transform = all_transforms[i]
-		var current_velocity = PhysicsHandler.get_body_velocity(boid_body_rids[i])
-
-		var neighbor_rids = PhysicsHandler.find_neighbors_with_query(
-			space_rid, neighbor_query, current_transform.origin, boid_body_rids[i]
+		var results = PhysicsServer3D.space_get_direct_state(space_rid).intersect_shape(
+			neighbor_query
 		)
+
+		var neighbor_rids: Array[RID] = []
+		for result in results:
+			neighbor_rids.append(result["rid"])
 
 		var neighbors: Array[int] = []
 		for rid in neighbor_rids:
@@ -103,9 +108,7 @@ func _process(delta: float) -> void:
 
 		var neighbor_velocities: Array[Vector3] = []
 		for neighbor_index in neighbors:
-			neighbor_velocities.append(
-				PhysicsHandler.get_body_velocity(boid_body_rids[neighbor_index])
-			)
+			neighbor_velocities.append(velocity_array[neighbor_index])
 
 		var separation_force = BoidHandler.calculate_separation(
 			current_transform.origin,
@@ -129,17 +132,24 @@ func _process(delta: float) -> void:
 
 		var acceleration = separation_force + cohesion_force + alignment_force
 
-		var new_velocity = PhysicsHandler.update_velocity(
-			current_velocity, acceleration, delta, max_speed
-		)
+		var new_velocity = current_velocity + (acceleration * delta)
 
-		PhysicsHandler.set_body_velocity(boid_body_rids[i], new_velocity)
+		if new_velocity.length() > max_speed:
+			new_velocity = new_velocity.normalized() * max_speed
 
-		var new_transform = PhysicsHandler.apply_velocity(current_transform, new_velocity, delta)
+		velocity_array[index] = new_velocity
+
+		var new_transform: Transform3D
+		new_transform.origin = current_transform.origin + new_velocity * delta
+
 		new_transform.origin = PhysicsHandler.apply_bounds_wrap(new_transform.origin, bounds)
 
-		PhysicsHandler.set_body_transform(boid_body_rids[i], new_transform)
-		MeshHandler.set_transform(multimesh_rid, i, new_transform)
+		PhysicsServer3D.body_set_state(
+			boid_body_rids[index], PhysicsServer3D.BODY_STATE_TRANSFORM, new_transform
+		)
+
+		RenderingServer.multimesh_instance_set_transform(multimesh_rid, index, new_transform)
+		all_transforms[index] = new_transform
 
 
 func initialize_boids() -> void:
@@ -147,30 +157,44 @@ func initialize_boids() -> void:
 	boid_shape_rids.clear()
 	rid_to_index.clear()
 
-	for i in range(visible_instance_count):
-		var random_position = PhysicsHandler.generate_random_position(bounds)
-
-		MeshHandler.set_transform(multimesh_rid, i, Transform3D().translated(random_position))
-
-		var random_velocity = PhysicsHandler.generate_random_velocity(max_speed)
-
-		var body_data = PhysicsHandler.create_boid_body(
-			space_rid,
-			random_position,
-			boid_collision_radius,
-			BOID_COLLISION_LAYER,
-			BOID_COLLISION_MASK
+	for index in range(visible_instance_count):
+		var random_position = Vector3(
+			randf() * bounds.x - (bounds.x / 2.0),
+			randf() * bounds.y - (bounds.y / 2.0),
+			randf() * bounds.z - (bounds.z / 2.0)
 		)
 
-		boid_body_rids.append(body_data["body_rid"])
-		boid_shape_rids.append(body_data["shape_rid"])
-		rid_to_index[body_data["body_rid"]] = i
+		RenderingServer.multimesh_instance_set_transform(
+			multimesh_rid, index, Transform3D().translated(random_position)
+		)
+		var random_velocity = Vector3(
+			randf_range(-max_speed, max_speed),
+			randf_range(-max_speed, max_speed),
+			randf_range(-max_speed, max_speed)
+		)
 
-		PhysicsHandler.set_body_velocity(body_data["body_rid"], random_velocity)
+		# create boid physics body in PhysicsServer
+		var body_rid = PhysicsServer3D.body_create()
+		PhysicsServer3D.body_set_mode(body_rid, PhysicsServer3D.BODY_MODE_KINEMATIC)
+		PhysicsServer3D.body_set_space(body_rid, space_rid)
+
+		var shape_rid = PhysicsServer3D.sphere_shape_create()
+		PhysicsServer3D.shape_set_data(shape_rid, boid_collision_radius)
+		PhysicsServer3D.body_add_shape(body_rid, shape_rid)
+
+		var transform = Transform3D(Basis.IDENTITY, random_position)
+		PhysicsServer3D.body_set_state(body_rid, PhysicsServer3D.BODY_STATE_TRANSFORM, transform)
+		all_transforms.append(transform)
+		boid_body_rids.append(body_rid)
+		boid_shape_rids.append(shape_rid)
+		rid_to_index[body_rid] = index
+		velocity_array.append(random_velocity)
 
 
 func _exit_tree() -> void:
 	for i in range(boid_body_rids.size()):
-		PhysicsHandler.destroy_boid_body(boid_body_rids[i], boid_shape_rids[i])
+		PhysicsServer3D.free_rid(boid_body_rids[i])
+		PhysicsServer3D.free_rid(boid_shape_rids[i])
 
-	MeshHandler.destroy_multimesh(multimesh_rid, instance_rid)
+	RenderingServer.free_rid(instance_rid)
+	RenderingServer.free_rid(multimesh_rid)
