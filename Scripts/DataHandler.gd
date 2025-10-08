@@ -89,11 +89,13 @@ func _physics_process(delta: float) -> void:
 		var neighbors: PackedInt32Array = []
 
 		if use_bvh:
-			var search_bounds: AABB = AABB()
-			search_bounds.size = Vector3(
-				max_perception_radius, max_perception_radius, max_perception_radius
+			var half_radius = max_perception_radius
+			var search_bounds: AABB = AABB(
+				position_array[index] - Vector3(half_radius, half_radius, half_radius),
+				Vector3(
+					max_perception_radius * 2, max_perception_radius * 2, max_perception_radius * 2
+				)
 			)
-			search_bounds.position = position_array[index]
 			if bvh_root != null:
 				neighbors = query_bvh_neighbors(index, search_bounds)
 			else:
@@ -252,9 +254,6 @@ func _process(_delta: float) -> void:
 func rebuild_bvh() -> void:
 	if bvh_root != null:
 		bvh_root.ClearRecursive()
-
-	position_array.clear()
-	position_array.resize(visible_instance_count)
 
 	bvh_root = bvh_root.BuildBVH(position_array)
 
