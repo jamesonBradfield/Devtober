@@ -1,4 +1,4 @@
-class_name BVHNode
+class_name BVHNodeOld
 
 var bounds: AABB
 var left: BVHNode

@@ -12,8 +12,12 @@ config_version=5
 
 config/name="DevTober"
 run/main_scene="uid://c7t5ep2vd50mv"
-config/features=PackedStringArray("4.5", "Forward Plus")
+config/features=PackedStringArray("4.5", "C#", "Forward Plus")
 config/icon="res://icon.svg"
+
+[dotnet]
+
+project/assembly_name="DevTober"
 
 [editor_plugins]
 
@@ -21,4 +25,8 @@ enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg", "res://addons/sk_fl
 
 [physics]
 
+2d/run_on_separate_thread=true
+3d/run_on_separate_thread=true
+common/physics_ticks_per_second=30
+common/physics_jitter_fix=0.0
 3d/physics_engine="Jolt Physics"
