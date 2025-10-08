@@ -163,7 +163,6 @@ func _physics_process(delta: float) -> void:
 			)
 
 
-# TODO: FIX THIS MESS OF CONVERSIONS PLEASE!!!!
 static func calculate_separation(
 	boid_position: Vector3, positions: PackedVector3Array, neighbors: Array[int], weight: float
 ) -> Vector3:
@@ -259,12 +258,12 @@ func rebuild_bvh() -> void:
 
 
 func query_bvh_neighbors(exclude_index: int, search_bounds: AABB) -> PackedInt32Array:
-	var neighbors: PackedInt32Array = []
+	var neighbors: PackedInt32Array = PackedInt32Array()
 
 	if bvh_root == null:
 		return neighbors
 
-	neighbors = bvh_root.QueryRecursive(search_bounds, exclude_index)
+	bvh_root.QueryRecursive(search_bounds, exclude_index, neighbors)
 	return neighbors
 
 

@@ -108,20 +108,15 @@ func ClearRecursive():
 	right = null
 
 
-func QueryRecursive(
-	_check_bounds: AABB,
-	exclude_index: int,
-) -> PackedInt32Array:
-	var neighbors: PackedInt32Array
+func QueryRecursive(_check_bounds: AABB, exclude_index: int, result: PackedInt32Array) -> void:
 	if left == null and right == null:
 		for i in range(objects.size()):
 			if _check_bounds.has_point(objects[i]) and i != exclude_index:
-				neighbors.append(i)
-		return neighbors
+				result.append(i)
+		return
 
 	if !bounds.intersects(_check_bounds):
-		return neighbors
+		return
 
-	neighbors.append_array(left.QueryRecursive(_check_bounds, exclude_index))
-	neighbors.append_array(right.QueryRecursive(_check_bounds, exclude_index))
-	return neighbors
+	left.QueryRecursive(_check_bounds, exclude_index, result)
+	right.QueryRecursive(_check_bounds, exclude_index, result)
