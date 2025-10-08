@@ -119,19 +119,9 @@ func QueryRecursive(
 				neighbors.append(i)
 		return neighbors
 
-	if !bounds.intersection(_check_bounds):
+	if !bounds.intersects(_check_bounds):
 		return neighbors
 
 	neighbors.append_array(left.QueryRecursive(_check_bounds, exclude_index))
 	neighbors.append_array(right.QueryRecursive(_check_bounds, exclude_index))
 	return neighbors
-
-
-func bounds_intersects_sphere(center: Vector3, radius: float) -> bool:
-	var closest_point = Vector3(
-		clamp(center.x, bounds.position.x, bounds.position.x + bounds.size.x),
-		clamp(center.y, bounds.position.y, bounds.position.y + bounds.size.y),
-		clamp(center.z, bounds.position.z, bounds.position.z + bounds.size.z)
-	)
-
-	return center.distance_squared_to(closest_point) <= radius * radius

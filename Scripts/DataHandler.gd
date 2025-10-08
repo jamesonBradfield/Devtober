@@ -256,9 +256,6 @@ func rebuild_bvh() -> void:
 	position_array.clear()
 	position_array.resize(visible_instance_count)
 
-	for index in range(visible_instance_count):
-		position_array[index] = position_array[index]
-
 	bvh_root = bvh_root.BuildBVH(position_array)
 
 
@@ -268,7 +265,7 @@ func query_bvh_neighbors(exclude_index: int, search_bounds: AABB) -> PackedInt32
 	if bvh_root == null:
 		return neighbors
 
-	bvh_root.QueryRecursive(search_bounds, exclude_index)
+	neighbors = bvh_root.QueryRecursive(search_bounds, exclude_index)
 	return neighbors
 
 
