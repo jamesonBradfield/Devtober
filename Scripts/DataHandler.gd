@@ -89,8 +89,13 @@ func _physics_process(delta: float) -> void:
 		var neighbors: PackedInt32Array = []
 
 		if use_bvh:
+			var search_bounds: AABB = AABB()
+			search_bounds.size = Vector3(
+				max_perception_radius, max_perception_radius, max_perception_radius
+			)
+			search_bounds.position = position_array[index]
 			if bvh_root != null:
-				neighbors = query_bvh_neighbors(index, position_array[index], max_perception_radius)
+				neighbors = query_bvh_neighbors(index, search_bounds)
 			else:
 				print("bvh_root is null when trying to query_bvh_neighbors!!")
 		else:
@@ -109,27 +114,16 @@ func _physics_process(delta: float) -> void:
 		for neighbor_index in neighbors:
 			neighbor_velocities.append(velocity_array[neighbor_index])
 
-		var separation_force = BoidHandler.calculate_separation(
-			position_array[index],
-			position_array,
-			neighbors,
-			separation_perception_radius,
-			separation_weight
+		var separation_force = calculate_separation(
+			position_array[index], position_array, neighbors, separation_weight
 		)
 
-		var cohesion_force = BoidHandler.calculate_cohesion(
-			position_array[index],
-			position_array,
-			neighbors,
-			cohesion_perception_radius,
-			cohesion_weight
+		var cohesion_force = calculate_cohesion(
+			position_array[index], position_array, neighbors, cohesion_weight
 		)
 
-		var alignment_force = BoidHandler.calculate_alignment(
-			velocity_array[index],
-			neighbor_velocities,
-			alignment_perception_radius,
-			alignment_weight
+		var alignment_force = calculate_alignment(
+			velocity_array[index], neighbor_velocities, alignment_weight
 		)
 
 		var acceleration = separation_force + cohesion_force + alignment_force
@@ -169,11 +163,7 @@ func _physics_process(delta: float) -> void:
 
 # TODO: FIX THIS MESS OF CONVERSIONS PLEASE!!!!
 static func calculate_separation(
-	boid_position: Vector3,
-	positions: PackedVector3Array,
-	neighbors: Array[int],
-	radius: float,
-	weight: float
+	boid_position: Vector3, positions: PackedVector3Array, neighbors: Array[int], weight: float
 ) -> Vector3:
 	var steering = Vector3.ZERO
 	var count = 0
@@ -181,7 +171,7 @@ static func calculate_separation(
 	for neighbor_index in neighbors:
 		var distance = boid_position.distance_to(positions[neighbor_index])
 
-		if distance < radius and distance > 0:
+		if distance > 0:
 			var diff = boid_position - positions[neighbor_index]
 			diff = diff.normalized() / distance
 			steering += diff
@@ -195,21 +185,14 @@ static func calculate_separation(
 
 
 static func calculate_cohesion(
-	boid_position: Vector3,
-	positions: PackedVector3Array,
-	neighbors: Array[int],
-	radius: float,
-	weight: float
+	boid_position: Vector3, positions: PackedVector3Array, neighbors: Array[int], weight: float
 ) -> Vector3:
 	var center_of_mass = Vector3.ZERO
 	var count = 0
 
 	for neighbor_index in neighbors:
-		var distance = boid_position.distance_to(positions[neighbor_index])
-
-		if distance < radius:
-			center_of_mass += positions[neighbor_index]
-			count += 1
+		center_of_mass += positions[neighbor_index]
+		count += 1
 
 	if count > 0:
 		center_of_mass /= count
@@ -220,7 +203,7 @@ static func calculate_cohesion(
 
 
 static func calculate_alignment(
-	boid_velocity: Vector3, neighbor_velocities: PackedVector3Array, radius: float, weight: float
+	boid_velocity: Vector3, neighbor_velocities: PackedVector3Array, weight: float
 ) -> Vector3:
 	var count = neighbor_velocities.size()
 
@@ -235,7 +218,7 @@ static func calculate_alignment(
 	return (average_velocity - boid_velocity).normalized() * weight
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if use_bvh:
 		frames_since_bvh_rebuild += 1
 		if frames_since_bvh_rebuild >= bvh_rebuild_interval:
@@ -279,16 +262,13 @@ func rebuild_bvh() -> void:
 	bvh_root = bvh_root.BuildBVH(position_array)
 
 
-func query_bvh_neighbors(
-	exclude_index: int, query_position: Vector3, radius: float
-) -> PackedInt32Array:
+func query_bvh_neighbors(exclude_index: int, search_bounds: AABB) -> PackedInt32Array:
 	var neighbors: PackedInt32Array = []
-	var radius_squared = radius * radius
 
 	if bvh_root == null:
 		return neighbors
 
-	bvh_root.QueryRecursive(query_position, radius, radius_squared, exclude_index, neighbors)
+	bvh_root.QueryRecursive(search_bounds, exclude_index)
 	return neighbors
 
 

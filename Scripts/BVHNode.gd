@@ -107,23 +107,24 @@ func ClearRecursive():
 	left = null
 	right = null
 
+
 func QueryRecursive(
-	_check_bounds : AABB,
+	_check_bounds: AABB,
 	exclude_index: int,
-	neighbors: PackedInt32Array
-) -> void:
+) -> PackedInt32Array:
+	var neighbors: PackedInt32Array
 	if left == null and right == null:
 		for i in range(objects.size()):
-			var distance_squared = query_position.distance_squared_to(objects[i])
-			if distance_squared <= radius_squared and i != exclude_index:
+			if _check_bounds.has_point(objects[i]) and i != exclude_index:
 				neighbors.append(i)
-		return
+		return neighbors
 
-	if !bounds_intersects_sphere(query_position, radius):
-		return
+	if !bounds.intersection(_check_bounds):
+		return neighbors
 
-	left.QueryRecursive(query_position, radius, radius_squared, exclude_index, neighbors)
-	right.QueryRecursive(query_position, radius, radius_squared, exclude_index, neighbors)
+	neighbors.append_array(left.QueryRecursive(_check_bounds, exclude_index))
+	neighbors.append_array(right.QueryRecursive(_check_bounds, exclude_index))
+	return neighbors
 
 
 func bounds_intersects_sphere(center: Vector3, radius: float) -> bool:
