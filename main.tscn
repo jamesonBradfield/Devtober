@@ -151,15 +151,16 @@ text = "Visible Instances: 0"
 
 [node name="DataHandler" type="Node3D" parent="."]
 script = ExtResource("2_0xm2m")
+cache_neighbors = false
 boid_mesh = SubResource("BoxMesh_0xm2m")
-bvh_rebuild_interval = 8
-instance_count = 2000
-visible_instance_count = 2000
-bounds = Vector3(200, 200, 200)
-alignment_perception_radius = 18.0
+bvh_rebuild_interval = 1
+instance_count = 100
+visible_instance_count = 100
+bounds = Vector3(50, 50, 50)
+max_speed = 10.0
+use_bvh = false
 cohesion_perception_radius = 20.0
-separation_perception_radius = 10.0
-alignment_weight = 0.3
-cohesion_weight = 0.4
-separation_weight = 0.2
+alignment_weight = 3.0
+cohesion_weight = 5.0
+separation_weight = 6.0
 metadata/_custom_type_script = "uid://de4blhjd2haq"

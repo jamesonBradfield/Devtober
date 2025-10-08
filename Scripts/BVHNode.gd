@@ -3,16 +3,16 @@ class_name BVHNode
 var bounds: AABB
 var left: BVHNode
 var right: BVHNode
-var objects: PackedVector3Array
+var indices: PackedInt32Array  # Store indices instead of positions
 
 
 func _init():
 	pass
 
 
-static func create_leaf(_objects) -> BVHNode:
+static func create_leaf(_indices: PackedInt32Array) -> BVHNode:
 	var new_instance = BVHNode.new()
-	new_instance.objects = _objects
+	new_instance.indices = _indices
 	return new_instance
 
 
@@ -24,52 +24,58 @@ static func create_internal(_bounds, _left, _right) -> BVHNode:
 	return new_instance
 
 
-## Recursively builds a BVH tree from the given objects
-func BuildBVH(_objects: PackedVector3Array) -> BVHNode:
-	if _objects.size() <= 5:
-		return create_leaf(_objects)
+func BuildBVH(positions: PackedVector3Array) -> BVHNode:
+	var _indices: PackedInt32Array
+	_indices.resize(positions.size())
+	for i in range(positions.size()):
+		_indices[i] = i
 
-	bounds = ComputeBoundingBox(_objects)
+	return BuildBVHRecursive(positions, _indices)
+
+
+func BuildBVHRecursive(positions: PackedVector3Array, _indices: PackedInt32Array) -> BVHNode:
+	if _indices.size() <= 5:
+		return create_leaf(_indices)
+
+	bounds = ComputeBoundingBox(positions, _indices)
 	var axis = ChooseSplitAxis(bounds)
-	var split_point = CalculateSplitPoint(_objects, axis)
+	var split_point = CalculateSplitPoint(positions, _indices, axis)
 
-	var left_objects = PackedVector3Array()
-	var right_objects = PackedVector3Array()
+	var left_indices: PackedInt32Array
+	var right_indices: PackedInt32Array
 
-	for object in _objects:
-		if object[axis] < split_point[axis]:
-			left_objects.append(object)
+	for idx in _indices:
+		if positions[idx][axis] < split_point[axis]:
+			left_indices.append(idx)
 		else:
-			right_objects.append(object)
+			right_indices.append(idx)
 
-	if left_objects.size() == 0:
-		left_objects.append(_objects[0])
-		right_objects.resize(right_objects.size() - 1)
+	if left_indices.size() == 0:
+		left_indices.append(_indices[0])
+		right_indices.resize(right_indices.size() - 1)
 
-	if right_objects.size() == 0:
-		right_objects.append(_objects[_objects.size() - 1])
-		left_objects.resize(left_objects.size() - 1)
+	if right_indices.size() == 0:
+		right_indices.append(_indices[_indices.size() - 1])
+		left_indices.resize(left_indices.size() - 1)
 
-	var left_child = BuildBVH(left_objects)
-	var right_child = BuildBVH(right_objects)
+	var left_child = BuildBVHRecursive(positions, left_indices)
+	var right_child = BuildBVHRecursive(positions, right_indices)
 
 	return create_internal(bounds, left_child, right_child)
 
 
-## Computes the axis-aligned bounding box containing all objects
-func ComputeBoundingBox(_objects: PackedVector3Array) -> AABB:
-	if _objects.size() == 0:
+func ComputeBoundingBox(positions: PackedVector3Array, _indices: PackedInt32Array) -> AABB:
+	if _indices.size() == 0:
 		return AABB()
 
-	var result = AABB(_objects[0], Vector3.ZERO)
+	var result = AABB(positions[_indices[0]], Vector3.ZERO)
 
-	for object in _objects:
-		result = result.expand(object)
+	for idx in _indices:
+		result = result.expand(positions[idx])
 
 	return result
 
 
-## Selects the axis with the largest extent for splitting
 func ChooseSplitAxis(_bounds: AABB) -> int:
 	var size = _bounds.size
 
@@ -82,16 +88,17 @@ func ChooseSplitAxis(_bounds: AABB) -> int:
 	return 2
 
 
-## Calculates the split point as the median along the specified axis
-func CalculateSplitPoint(_objects: PackedVector3Array, axis: int) -> Vector3:
-	if _objects.size() == 0:
+func CalculateSplitPoint(
+	positions: PackedVector3Array, _indices: PackedInt32Array, axis: int
+) -> Vector3:
+	if _indices.size() == 0:
 		return Vector3.ZERO
 
 	var sum = 0.0
-	for object in _objects:
-		sum += object[axis]
+	for idx in _indices:
+		sum += positions[idx][axis]
 
-	var median = sum / _objects.size()
+	var median = sum / _indices.size()
 	var split_point = Vector3.ZERO
 	split_point[axis] = median
 
@@ -99,7 +106,7 @@ func CalculateSplitPoint(_objects: PackedVector3Array, axis: int) -> Vector3:
 
 
 func ClearRecursive():
-	objects.clear()
+	indices.clear()
 	if left == null and right == null:
 		return
 	left.ClearRecursive()
@@ -108,15 +115,17 @@ func ClearRecursive():
 	right = null
 
 
-func QueryRecursive(_check_bounds: AABB, exclude_index: int, result: PackedInt32Array) -> void:
+func QueryRecursive(
+	positions: PackedVector3Array, _check_bounds: AABB, exclude_index: int, result: PackedInt32Array
+) -> void:
 	if left == null and right == null:
-		for i in range(objects.size()):
-			if _check_bounds.has_point(objects[i]) and i != exclude_index:
-				result.append(i)
+		for idx in indices:
+			if idx != exclude_index and _check_bounds.has_point(positions[idx]):
+				result.append(idx)
 		return
 
 	if !bounds.intersects(_check_bounds):
 		return
 
-	left.QueryRecursive(_check_bounds, exclude_index, result)
-	right.QueryRecursive(_check_bounds, exclude_index, result)
+	left.QueryRecursive(positions, _check_bounds, exclude_index, result)
+	right.QueryRecursive(positions, _check_bounds, exclude_index, result)

@@ -1,7 +1,8 @@
 # DataHandler.gd
 class_name DataHandler
 extends Node3D
-
+var neighbor_cache: Array[PackedInt32Array] = []
+@export var cache_neighbors: bool = true
 var multimesh_rid: RID
 var instance_rid: RID
 var space_rid: RID
@@ -65,16 +66,20 @@ const BOID_COLLISION_MASK = 1
 
 func _ready() -> void:
 	space_rid = get_world_3d().space
-	var result = MeshHandler.create_multimesh(boid_mesh, instance_count, get_world_3d().scenario)
-	multimesh_rid = result["multimesh_rid"]
-	instance_rid = result["instance_rid"]
+	multimesh_rid = RenderingServer.multimesh_create()
+	RenderingServer.multimesh_allocate_data(
+		multimesh_rid, instance_count, RenderingServer.MULTIMESH_TRANSFORM_3D, false
+	)
+	RenderingServer.multimesh_set_mesh(multimesh_rid, boid_mesh.get_rid())
+	instance_rid = RenderingServer.instance_create()
+	RenderingServer.instance_set_base(instance_rid, multimesh_rid)
+	RenderingServer.instance_set_scenario(instance_rid, get_world_3d().scenario)
 
 	max_perception_radius = maxf(
 		alignment_perception_radius, maxf(separation_perception_radius, cohesion_perception_radius)
 	)
 
-	MeshHandler.set_visible_instance_count(multimesh_rid, visible_instance_count)
-
+	RenderingServer.multimesh_set_visible_instances(multimesh_rid, visible_instance_count)
 	neighbor_sphere = SphereShape3D.new()
 	neighbor_sphere.radius = max_perception_radius
 	neighbor_query = PhysicsShapeQueryParameters3D.new()
@@ -89,17 +94,22 @@ func _physics_process(delta: float) -> void:
 		var neighbors: PackedInt32Array = []
 
 		if use_bvh:
-			var half_radius = max_perception_radius
-			var search_bounds: AABB = AABB(
-				position_array[index] - Vector3(half_radius, half_radius, half_radius),
-				Vector3(
-					max_perception_radius * 2, max_perception_radius * 2, max_perception_radius * 2
-				)
-			)
-			if bvh_root != null:
-				neighbors = query_bvh_neighbors(index, search_bounds)
+			if cache_neighbors and neighbor_cache.size() > index:
+				neighbors = neighbor_cache[index]
 			else:
-				print("bvh_root is null when trying to query_bvh_neighbors!!")
+				var half_radius = max_perception_radius
+				var search_bounds: AABB = AABB(
+					position_array[index] - Vector3(half_radius, half_radius, half_radius),
+					Vector3(
+						max_perception_radius * 2,
+						max_perception_radius * 2,
+						max_perception_radius * 2
+					)
+				)
+				if bvh_root != null:
+					neighbors = query_bvh_neighbors(index, search_bounds)
+				else:
+					print("bvh_root is null when trying to query_bvh_neighbors!!")
 		else:
 			neighbor_query.transform = Transform3D(Basis.IDENTITY, position_array[index])
 			neighbor_query.exclude = [boid_body_rids[index]]
@@ -254,7 +264,25 @@ func rebuild_bvh() -> void:
 	if bvh_root != null:
 		bvh_root.ClearRecursive()
 
+	bvh_root = BVHNode.new()
 	bvh_root = bvh_root.BuildBVH(position_array)
+
+	# Rebuild neighbor cache
+	if cache_neighbors:
+		rebuild_neighbor_cache()
+
+
+func rebuild_neighbor_cache() -> void:
+	neighbor_cache.clear()
+	neighbor_cache.resize(visible_instance_count)
+
+	for index in range(visible_instance_count):
+		var half_radius = max_perception_radius
+		var search_bounds: AABB = AABB(
+			position_array[index] - Vector3(half_radius, half_radius, half_radius),
+			Vector3(max_perception_radius * 2, max_perception_radius * 2, max_perception_radius * 2)
+		)
+		neighbor_cache[index] = query_bvh_neighbors(index, search_bounds)
 
 
 func query_bvh_neighbors(exclude_index: int, search_bounds: AABB) -> PackedInt32Array:
@@ -263,7 +291,7 @@ func query_bvh_neighbors(exclude_index: int, search_bounds: AABB) -> PackedInt32
 	if bvh_root == null:
 		return neighbors
 
-	bvh_root.QueryRecursive(search_bounds, exclude_index, neighbors)
+	bvh_root.QueryRecursive(position_array, search_bounds, exclude_index, neighbors)
 	return neighbors
 
 
@@ -271,7 +299,10 @@ func initialize_boids() -> void:
 	boid_body_rids.clear()
 	boid_shape_rids.clear()
 	rid_to_index.clear()
+	neighbor_cache.clear()  # Clear the cache
+	neighbor_cache.resize(visible_instance_count)  # Initialize to correct size
 	bvh_root = BVHNode.new()
+
 	for index in range(visible_instance_count):
 		var random_position = Vector3(
 			randf() * bounds.x - (bounds.x / 2.0),
@@ -311,6 +342,7 @@ func initialize_boids() -> void:
 
 		position_array.append(random_position)
 		velocity_array.append(random_velocity)
+		neighbor_cache[index] = PackedInt32Array()  # Initialize each cache entry
 
 	if use_bvh:
 		rebuild_bvh()
