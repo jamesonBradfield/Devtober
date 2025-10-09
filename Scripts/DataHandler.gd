@@ -12,7 +12,7 @@ var rid_to_index: Dictionary = {}
 var neighbor_query: PhysicsShapeQueryParameters3D
 var neighbor_sphere: SphereShape3D
 var velocity_array: PackedVector3Array
-var bvh_root: BVHNode
+var bvh_root
 var position_array: PackedVector3Array
 var frames_since_bvh_rebuild: int = 0
 
@@ -264,8 +264,7 @@ func rebuild_bvh() -> void:
 	if bvh_root != null:
 		bvh_root.ClearRecursive()
 
-	bvh_root = BVHNode.new()
-	bvh_root = bvh_root.BuildBVH(position_array)
+	bvh_root = BVHNode.BuildBVH(position_array)
 
 	# Rebuild neighbor cache
 	if cache_neighbors:
@@ -301,7 +300,6 @@ func initialize_boids() -> void:
 	rid_to_index.clear()
 	neighbor_cache.clear()  # Clear the cache
 	neighbor_cache.resize(visible_instance_count)  # Initialize to correct size
-	bvh_root = BVHNode.new()
 
 	for index in range(visible_instance_count):
 		var random_position = Vector3(

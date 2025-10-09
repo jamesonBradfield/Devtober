@@ -151,8 +151,9 @@ text = "Visible Instances: 0"
 
 [node name="DataHandler" type="Node3D" parent="."]
 script = ExtResource("2_0xm2m")
+cache_neighbors = false
 boid_mesh = SubResource("BoxMesh_0xm2m")
-bvh_rebuild_interval = 8
+bvh_rebuild_interval = 1
 bounds = Vector3(50, 50, 50)
 max_speed = 10.0
 cohesion_perception_radius = 20.0

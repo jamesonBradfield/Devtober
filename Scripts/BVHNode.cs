@@ -1,6 +1,8 @@
 using Godot;
 using System.Collections.Generic;
+using System.Linq;
 
+[GlobalClass]
 public partial class BVHNode : RefCounted
 {
     public Aabb Bounds { get; set; }
@@ -128,7 +130,34 @@ public partial class BVHNode : RefCounted
         Right = null;
     }
 
+    // Public method for GDScript - takes and returns int[]
     public void QueryRecursive(
+        Vector3[] positions,
+        Aabb checkBounds,
+        int excludeIndex,
+        int[] result)
+    {
+        var resultList = new List<int>(result);
+        QueryRecursiveInternal(positions, checkBounds, excludeIndex, resultList);
+
+        // Copy results back - GDScript will see the modified array
+        // Actually, this won't work because int[] is pass-by-value for the array reference
+        // We need to return int[] instead
+    }
+
+    // Better approach: return the results
+    public int[] Query(
+        Vector3[] positions,
+        Aabb checkBounds,
+        int excludeIndex)
+    {
+        var result = new List<int>();
+        QueryRecursiveInternal(positions, checkBounds, excludeIndex, result);
+        return result.ToArray();
+    }
+
+    // Private internal method that uses List<int>
+    private void QueryRecursiveInternal(
         Vector3[] positions,
         Aabb checkBounds,
         int excludeIndex,
@@ -147,7 +176,7 @@ public partial class BVHNode : RefCounted
         if (!Bounds.Intersects(checkBounds))
             return;
 
-        Left.QueryRecursive(positions, checkBounds, excludeIndex, result);
-        Right.QueryRecursive(positions, checkBounds, excludeIndex, result);
+        Left.QueryRecursiveInternal(positions, checkBounds, excludeIndex, result);
+        Right.QueryRecursiveInternal(positions, checkBounds, excludeIndex, result);
     }
 }
