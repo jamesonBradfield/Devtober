@@ -10,14 +10,17 @@ public partial class BVHNode : RefCounted
     public BVHNode Right { get; set; }
     public int[] Indices { get; set; }
 
+    /// <summary>
+    /// Creates a leaf node containing the specified indices
+    /// </summary>
     public static BVHNode CreateLeaf(int[] indices)
     {
-        return new BVHNode
-        {
-            Indices = indices
-        };
+        return new BVHNode { Indices = indices };
     }
 
+    /// <summary>
+    /// Creates an internal node with bounds and child nodes
+    /// </summary>
     public static BVHNode CreateInternal(Aabb bounds, BVHNode left, BVHNode right)
     {
         return new BVHNode
@@ -28,6 +31,9 @@ public partial class BVHNode : RefCounted
         };
     }
 
+    /// <summary>
+    /// Builds a complete BVH from position array
+    /// </summary>
     public static BVHNode BuildBVH(Vector3[] positions)
     {
         var indices = new int[positions.Length];
@@ -37,6 +43,9 @@ public partial class BVHNode : RefCounted
         return BuildBVHRecursive(positions, indices);
     }
 
+    /// <summary>
+    /// Recursively builds the BVH tree structure
+    /// </summary>
     private static BVHNode BuildBVHRecursive(Vector3[] positions, int[] indices)
     {
         if (indices.Length <= 5)
@@ -75,6 +84,9 @@ public partial class BVHNode : RefCounted
         return CreateInternal(bounds, leftChild, rightChild);
     }
 
+    /// <summary>
+    /// Computes the bounding box for a set of positions
+    /// </summary>
     private static Aabb ComputeBoundingBox(Vector3[] positions, int[] indices)
     {
         if (indices.Length == 0)
@@ -88,6 +100,9 @@ public partial class BVHNode : RefCounted
         return result;
     }
 
+    /// <summary>
+    /// Chooses the best axis to split the bounding box
+    /// </summary>
     private static int ChooseSplitAxis(Aabb bounds)
     {
         var size = bounds.Size;
@@ -101,6 +116,9 @@ public partial class BVHNode : RefCounted
         return 2;
     }
 
+    /// <summary>
+    /// Calculates the split point along the specified axis
+    /// </summary>
     private static Vector3 CalculateSplitPoint(Vector3[] positions, int[] indices, int axis)
     {
         if (indices.Length == 0)
@@ -117,6 +135,9 @@ public partial class BVHNode : RefCounted
         return splitPoint;
     }
 
+    /// <summary>
+    /// Recursively clears all nodes in the tree
+    /// </summary>
     public void ClearRecursive()
     {
         Indices = null;
@@ -130,33 +151,19 @@ public partial class BVHNode : RefCounted
         Right = null;
     }
 
-    // Public method for GDScript - takes and returns int[]
-    public void QueryRecursive(
-        Vector3[] positions,
-        Aabb checkBounds,
-        int excludeIndex,
-        int[] result)
-    {
-        var resultList = new List<int>(result);
-        QueryRecursiveInternal(positions, checkBounds, excludeIndex, resultList);
-
-        // Copy results back - GDScript will see the modified array
-        // Actually, this won't work because int[] is pass-by-value for the array reference
-        // We need to return int[] instead
-    }
-
-    // Better approach: return the results
-    public int[] Query(
-        Vector3[] positions,
-        Aabb checkBounds,
-        int excludeIndex)
+    /// <summary>
+    /// Queries the BVH for all indices within the specified bounds
+    /// </summary>
+    public int[] Query(Vector3[] positions, Aabb checkBounds, int excludeIndex)
     {
         var result = new List<int>();
         QueryRecursiveInternal(positions, checkBounds, excludeIndex, result);
         return result.ToArray();
     }
 
-    // Private internal method that uses List<int>
+    /// <summary>
+    /// Internal recursive query implementation
+    /// </summary>
     private void QueryRecursiveInternal(
         Vector3[] positions,
         Aabb checkBounds,
@@ -165,10 +172,16 @@ public partial class BVHNode : RefCounted
     {
         if (Left == null && Right == null)
         {
+            if (Indices == null)
+                return;
+
             foreach (var idx in Indices)
             {
-                if (idx != excludeIndex && checkBounds.HasPoint(positions[idx]))
-                    result.Add(idx);
+                if (idx == excludeIndex)
+                    continue;
+                if (!checkBounds.HasPoint(positions[idx]))
+                    continue;
+                result.Add(idx);
             }
             return;
         }
@@ -176,7 +189,7 @@ public partial class BVHNode : RefCounted
         if (!Bounds.Intersects(checkBounds))
             return;
 
-        Left.QueryRecursiveInternal(positions, checkBounds, excludeIndex, result);
-        Right.QueryRecursiveInternal(positions, checkBounds, excludeIndex, result);
+        Left?.QueryRecursiveInternal(positions, checkBounds, excludeIndex, result);
+        Right?.QueryRecursiveInternal(positions, checkBounds, excludeIndex, result);
     }
 }

@@ -1,6 +1,5 @@
-[gd_scene load_steps=9 format=3 uid="uid://c7t5ep2vd50mv"]
+[gd_scene load_steps=6 format=3 uid="uid://c7t5ep2vd50mv"]
 
-[ext_resource type="Script" uid="uid://de4blhjd2haq" path="res://Scripts/DataHandler.gd" id="2_0xm2m"]
 [ext_resource type="Script" uid="uid://cte4jalives85" path="res://addons/sk_fly_camera/src/fly_camera.gd" id="2_bo1nx"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_jjgbg"]
@@ -17,14 +16,6 @@ sky = SubResource("Sky_bo1nx")
 glow_enabled = true
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_8gbba"]
-
-[sub_resource type="Theme" id="Theme_jjgbg"]
-MarginContainer/constants/margin_bottom = 8
-MarginContainer/constants/margin_left = 8
-MarginContainer/constants/margin_right = 8
-MarginContainer/constants/margin_top = 8
-
-[sub_resource type="BoxMesh" id="BoxMesh_0xm2m"]
 
 [node name="Node3D" type="Node3D"]
 metadata/_edit_vertical_guides_ = [-344.0]
@@ -45,119 +36,6 @@ metadata/_custom_type_script = "uid://cte4jalives85"
 [node name="CollisionShape3D" type="CollisionShape3D" parent="FlyCamera"]
 shape = SubResource("SphereShape3D_8gbba")
 
-[node name="UI" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 0
-offset_right = 241.0
-offset_bottom = 291.0
-
-[node name="TabContainer" type="TabContainer" parent="UI"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-current_tab = 0
-
-[node name="Spawner" type="MarginContainer" parent="UI/TabContainer"]
-layout_mode = 2
-theme = SubResource("Theme_jjgbg")
-metadata/_tab_index = 0
-
-[node name="Spawner" type="BoxContainer" parent="UI/TabContainer/Spawner"]
-layout_mode = 2
-vertical = true
-
-[node name="x_bounds" type="Label" parent="UI/TabContainer/Spawner/Spawner"]
-layout_mode = 2
-size_flags_vertical = 1
-text = "x_bounds"
-
-[node name="x_bounds_slider" type="HSlider" parent="UI/TabContainer/Spawner/Spawner"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
-max_value = 300.0
-
-[node name="y_bounds" type="Label" parent="UI/TabContainer/Spawner/Spawner"]
-layout_mode = 2
-size_flags_vertical = 1
-text = "y_bounds"
-
-[node name="y_bounds_slider" type="HSlider" parent="UI/TabContainer/Spawner/Spawner"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
-max_value = 300.0
-
-[node name="z_bounds" type="Label" parent="UI/TabContainer/Spawner/Spawner"]
-layout_mode = 2
-size_flags_vertical = 1
-text = "z_bounds"
-
-[node name="z_bounds_slider" type="HSlider" parent="UI/TabContainer/Spawner/Spawner"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
-max_value = 300.0
-
-[node name="instance_count" type="Label" parent="UI/TabContainer/Spawner/Spawner"]
-layout_mode = 2
-size_flags_vertical = 1
-text = "instance_count"
-
-[node name="instance_count_slider" type="HSlider" parent="UI/TabContainer/Spawner/Spawner"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
-max_value = 99999.0
-
-[node name="visible_count" type="Label" parent="UI/TabContainer/Spawner/Spawner"]
-layout_mode = 2
-size_flags_vertical = 1
-text = "visible_count"
-
-[node name="visible_instance_count_slider" type="HSlider" parent="UI/TabContainer/Spawner/Spawner"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
-max_value = 99999.0
-
-[node name="boid" type="MarginContainer" parent="UI/TabContainer"]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 1
-
-[node name="Stats" type="MarginContainer" parent="UI/TabContainer"]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="UI/TabContainer/Stats"]
-layout_mode = 2
-
-[node name="FPS" type="Label" parent="UI/TabContainer/Stats/VBoxContainer"]
-layout_mode = 2
-text = "FPS: 0.0 fps"
-
-[node name="FrameTime" type="Label" parent="UI/TabContainer/Stats/VBoxContainer"]
-layout_mode = 2
-text = "FrameTime: 0.0 ms"
-
-[node name="VisibleInstances" type="Label" parent="UI/TabContainer/Stats/VBoxContainer"]
-layout_mode = 2
-text = "Visible Instances: 0"
-
-[node name="DataHandler" type="Node3D" parent="."]
-script = ExtResource("2_0xm2m")
-cache_neighbors = false
-boid_mesh = SubResource("BoxMesh_0xm2m")
-bvh_rebuild_interval = 1
-bounds = Vector3(50, 50, 50)
-max_speed = 10.0
-cohesion_perception_radius = 20.0
-alignment_weight = 3.0
-cohesion_weight = 5.0
-separation_weight = 6.0
-metadata/_custom_type_script = "uid://de4blhjd2haq"
+[node name="BoidHandler" type="BoidHandler" parent="."]
+count = 99999
+visible_count = 99999
