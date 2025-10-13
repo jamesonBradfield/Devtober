@@ -37,5 +37,3 @@ metadata/_custom_type_script = "uid://cte4jalives85"
 shape = SubResource("SphereShape3D_8gbba")
 
 [node name="BoidHandler" type="BoidHandler" parent="."]
-count = 99999
-visible_count = 99999

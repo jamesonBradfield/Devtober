@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 GodotLogger="*res://Scripts/GodotLogger.cs"
+DebugMenu="*res://addons/debug_menu/debug_menu.tscn"
 
 [dotnet]
 
@@ -25,7 +26,7 @@ project/assembly_name="DevTober"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg", "res://addons/sk_fly_camera/plugin.cfg")
+enabled=PackedStringArray("res://addons/debug_menu/plugin.cfg", "res://addons/gdUnit4/plugin.cfg", "res://addons/sk_fly_camera/plugin.cfg")
 
 [physics]
 
