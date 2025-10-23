@@ -1,7 +1,10 @@
 use godot::prelude::*;
 
-mod data_handler;
 mod bvh_node;
+mod data_handler;
+mod nav_agent;
+mod rand_vector;
+mod rendering;
 
 struct MyExtension;
 
