@@ -1,0 +1,134 @@
+use godot::{
+    classes::{rendering_server::MultimeshTransformFormat, ArrayMesh, Node3D, RenderingServer},
+    prelude::*,
+};
+
+#[derive(GodotClass)]
+#[class(base=Node3D)]
+pub struct MassRenderingNode {
+    base: Base<Node3D>,
+    #[var]
+    visible_count: i32,
+    multimesh: Rid,
+    multimesh_instance: Option<Rid>,
+    #[var]
+    mesh: Option<Gd<ArrayMesh>>,
+}
+
+#[godot_api]
+impl INode3D for MassRenderingNode {
+    fn init(base: Base<Node3D>) -> Self {
+        let multimesh: Rid = RenderingServer::singleton().multimesh_create();
+        Self {
+            base,
+            visible_count: 0,
+            multimesh,
+            multimesh_instance: None,
+            mesh: None,
+        }
+    }
+}
+
+#[godot_api]
+impl MassRenderingNode {
+    #[func]
+    pub fn setup_multimesh(&mut self) {
+        //validation...
+        if self.multimesh_instance.is_some() {
+            godot_warn!("Multimesh already initialized!");
+            return;
+        }
+        let Some(world) = self.base().get_world_3d() else {
+            godot_warn!("Failed to get world_3d");
+            return;
+        };
+        let Some(ref mesh) = self.mesh else {
+            godot_warn!("mesh NOT set!");
+            return;
+        };
+        if self.visible_count <= 0 {
+            godot_warn!("visible_count NOT set!");
+            return;
+        }
+        let mut rs = RenderingServer::singleton();
+        rs.multimesh_set_mesh(self.multimesh, mesh.get_rid());
+        rs.multimesh_allocate_data(
+            self.multimesh,
+            self.visible_count,
+            MultimeshTransformFormat::TRANSFORM_3D,
+        );
+        let instance = rs.instance_create();
+        rs.instance_set_scenario(instance, world.get_scenario());
+        rs.instance_set_base(instance, self.multimesh);
+        rs.instance_set_visible(instance, true);
+        self.multimesh_instance = Some(instance);
+    }
+
+    /// Original loop-based method - simple but slower for large counts
+    #[func]
+    pub fn draw_transforms(&mut self, transforms: Vec<Transform3D>) {
+        if transforms.len() != self.visible_count as usize {
+            godot_error!("your visible_count doesn't equal the length of your array");
+            return;
+        }
+        let mut rs = RenderingServer::singleton();
+        for i in 0..self.visible_count {
+            rs.multimesh_instance_set_transform(self.multimesh, i as i32, transforms[i as usize]);
+        }
+    }
+
+    /// Batched buffer-based method - much faster for large instance counts
+    #[func]
+    pub fn draw_transforms_batched(&mut self, transforms: Vec<Transform3D>) {
+        if transforms.len() != self.visible_count as usize {
+            godot_error!("your visible_count doesn't equal the length of your array");
+            return;
+        }
+
+        // Build buffer with correct row-major order
+        // For Transform3D: (basis.x.x, basis.y.x, basis.z.x, origin.x,
+        //                    basis.x.y, basis.y.y, basis.z.y, origin.y,
+        //                    basis.x.z, basis.y.z, basis.z.z, origin.z)
+        let mut floats = Vec::with_capacity(transforms.len() * 12);
+
+        for transform in transforms.iter() {
+            let basis = transform.basis;
+            let origin = transform.origin;
+
+            // Row 1: basis.x.x, basis.y.x, basis.z.x, origin.x
+            floats.push(basis.rows[0].x);
+            floats.push(basis.rows[1].x);
+            floats.push(basis.rows[2].x);
+            floats.push(origin.x);
+
+            // Row 2: basis.x.y, basis.y.y, basis.z.y, origin.y
+            floats.push(basis.rows[0].y);
+            floats.push(basis.rows[1].y);
+            floats.push(basis.rows[2].y);
+            floats.push(origin.y);
+
+            // Row 3: basis.x.z, basis.y.z, basis.z.z, origin.z
+            floats.push(basis.rows[0].z);
+            floats.push(basis.rows[1].z);
+            floats.push(basis.rows[2].z);
+            floats.push(origin.z);
+        }
+
+        // Convert to PackedFloat32Array
+        let buffer = PackedFloat32Array::from(&floats[..]);
+
+        // Set the entire buffer at once
+        let mut rs = RenderingServer::singleton();
+        rs.multimesh_set_buffer(self.multimesh, &buffer);
+    }
+}
+
+impl Drop for MassRenderingNode {
+    fn drop(&mut self) {
+        let mut rs = RenderingServer::singleton();
+        if let Some(instance) = self.multimesh_instance {
+            rs.free_rid(instance);
+        }
+        rs.free_rid(self.multimesh);
+    }
+}

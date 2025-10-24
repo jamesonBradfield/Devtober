@@ -1,5 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://c7t5ep2vd50mv"]
+[gd_scene load_steps=7 format=3 uid="uid://c7t5ep2vd50mv"]
 
+[ext_resource type="ArrayMesh" uid="uid://v6ik78epu851" path="res://Meshes/boid.obj" id="2_0xm2m"]
 [ext_resource type="Script" uid="uid://cte4jalives85" path="res://addons/sk_fly_camera/src/fly_camera.gd" id="2_bo1nx"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_jjgbg"]
@@ -32,16 +33,21 @@ metadata/_custom_type_script = "uid://cte4jalives85"
 [node name="CollisionShape3D" type="CollisionShape3D" parent="FlyCamera"]
 shape = SubResource("SphereShape3D_ig7tw")
 
+[node name="MassRenderingNode" type="MassRenderingNode" parent="."]
+
 [node name="BoidHandler" type="BoidHandler" parent="."]
-simulation_bounds = Vector3(200, 200, 200)
-count = 50000
-visible_count = 50000
-alignment_weight = 3.0
-cohesion_weight = 0.6
-separation_weight = 5.0
-alignment_range = 4.0
-cohesion_range = 6.0
-separation_range = 2.0
+simulation_bounds = Vector3(500, 500, 500)
+count = 100
+visible_count = 100
+alignment_weight = 2.0
+cohesion_weight = 1.6
+separation_weight = 2.0
+alignment_range = 10.0
+cohesion_range = 8.0
+separation_range = 4.0
 max_speed = 20.0
-seed = 42
-debug_bvh_max_depth = 50
+seed = 43
+debug_bvh = true
+debug_bvh_max_depth = 1
+render_node_path = NodePath("../MassRenderingNode")
+_boid_mesh = ExtResource("2_0xm2m")
