@@ -1,4 +1,5 @@
 # Post Mortem
+Note: The post-mortem below details the ultimate flat-array OctTree architecture that achieved this performance. The recovered code currently sitting in the multi-mesh branch is a parallel iteration utilizing a multi-threaded BVH (Bounding Volume Hierarchy), but the core data-oriented principles and direct RenderingServer batched updates remain the same!
 
 THE RUST IS NOT LOST see (multi-mesh) branch!!!
 
