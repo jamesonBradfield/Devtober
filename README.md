@@ -1,19 +1,14 @@
-# Post Mortem
-Note: The post-mortem below details the ultimate flat-array OctTree architecture that achieved this performance. The recovered code currently sitting in the multi-mesh branch is a parallel iteration utilizing a multi-threaded BVH (Bounding Volume Hierarchy), but the core data-oriented principles and direct RenderingServer batched updates remain the same!
+## Post Mortem: The Journey to 100k
 
-THE RUST IS NOT LOST see (multi-mesh) branch!!!
+**THE RUST IS NOT LOST!!! See the `multi-mesh` branch.**
 
-## Watch the 100k Boids Demonstration
-Early Implementation: https://www.youtube.com/watch?v=NAF7I6-K-Vo
-Last Documented Implementation: https://youtu.be/MLxljNBpJ9o
-## Lessons Learned & Architecture Decisions
+Watch the 100k Boids Demonstration:
+* Early Implementation: https://www.youtube.com/watch?v=NAF7I6-K-Vo
+* Last Documented Implementation (100k at 60fps): https://youtu.be/MLxljNBpJ9o
 
-- Architecture > Language: The language used doesn't matter nearly as much as the memory architecture. Flat arrays and direct UID/RID interactions with Godot's PhysicsServer and RenderingServer are the closest you can get to the metal, bypassing the overhead of the standard Node tree.
+### Lessons Learned & Architecture Decisions
 
-- The Godot-Rust "Sweet Spot": Rust is phenomenal for offloading heavy computational loops. However, it becomes a bottleneck if you try to deeply integrate with or replicate the engine's internal data structures (e.g., trying to set up an in-engine BVH is not worth the friction).
-
-- Array-Backed Linked Lists: Transitioned away from traditional object-oriented collections (like C#'s List<T>) to pure index-based linked lists. By packing the node logic into just two integers (count and index) inside a flat array, and sorting the boid array every rebuild, sibling entities were kept perfectly contiguous in memory, eliminating pointer-chasing and cache misses.
-
-- Prevented Boundary Thrashing (Loose Margins): Designed the OctTree with boundary overlap ("empty space") and a MaxElementCount per node. This allowed octants to dynamically and greedily encompass entire flocks, preventing the expensive CPU overhead of constantly re-assigning boids that hover on strict mathematical borders.
-
-- Data-Oriented Design & Cache Locality: Achieved 100k boids by leveraging rayon for data-parallel multithreading over the flat arrays. Furthermore, implemented implicit AABBs—calculating bounds dynamically on the fly via integer math (Vector3i) from a single RootAABB rather than storing floats per-node. Combined with a coarse/fine grid where only leaf nodes handle positions, this drastically minimized the memory footprint and maximized CPU L1/L2 cache locality.
+* **The C# OctTree Origins:** Early iterations of this project utilized C# and explored highly experimental memory architectures, such as pure index-based flat array OctTrees. By packing node logic into integers and sorting arrays, it attempted to eliminate pointer-chasing and cache misses. While clever, this approach ultimately fell short of the 100,000 instance goal.
+* **The Pivot to Rust:** To push past the CPU bottleneck, the core simulation logic was transitioned to a Rust GDExtension. This allowed the project to leverage the `rayon` crate for massive data-parallel multithreading, calculating boid steering forces (Separation, Alignment, Cohesion) across all available CPU cores simultaneously on flat `Vec<Vector3>` arrays.
+* **Navigating `godot-rust`:** The transition required ditching some of the "greener pasture" index-based ideas in favor of memory-safe Rust paradigms. The spatial partitioning system was rebuilt into a safe Bounding Volume Hierarchy (BVH) using standard heap allocations (`Box`) and explicit Godot `Aabb` types. It proved that writing safe, idiomatic Rust was still fast enough to shatter the performance ceiling.
+* **Direct Server Access (Bypassing the SceneTree):** The language used doesn't matter nearly as much as how you talk to the engine. Standard Godot Node trees carry too much overhead for massive simulations. The 100k milestone was achieved by treating entities as pure data and directly feeding a raw, row-major `PackedFloat32Array` of transforms to the `RenderingServer` in a single batched buffer update.
