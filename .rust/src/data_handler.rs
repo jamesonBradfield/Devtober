@@ -262,38 +262,38 @@ impl BoidHandler {
             .collect();
 
         // Apply steering forces and update positions
-        for i in 0..self.positions.len() {
+        for index in 0..self.positions.len() {
             // Calculate new velocity from current direction
-            let current_vel = self.directions[i] * max_speed;
-            let new_vel = current_vel + steering_forces[i] * delta;
+            let current_vel = self.directions[index] * max_speed;
+            let new_vel = current_vel + steering_forces[index] * delta;
 
             // Normalize to get new direction (simpler than speed clamping!)
             let speed = new_vel.length();
             if speed > 0.001 {
-                self.directions[i] = new_vel / speed;
+                self.directions[index] = new_vel / speed;
             }
 
             // Move at constant max speed
-            self.positions[i] += self.directions[i] * max_speed * delta;
+            self.positions[index] += self.directions[index] * max_speed * delta;
 
             // Wrap around bounds
             let bounds = self.simulation_bounds;
-            if self.positions[i].x > bounds.x {
-                self.positions[i].x = -bounds.x;
-            } else if self.positions[i].x < -bounds.x {
-                self.positions[i].x = bounds.x;
+            if self.positions[index].x > bounds.x {
+                self.positions[index].x = -bounds.x;
+            } else if self.positions[index].x < -bounds.x {
+                self.positions[index].x = bounds.x;
             }
 
-            if self.positions[i].y > bounds.y {
-                self.positions[i].y = -bounds.y;
-            } else if self.positions[i].y < -bounds.y {
-                self.positions[i].y = bounds.y;
+            if self.positions[index].y > bounds.y {
+                self.positions[index].y = -bounds.y;
+            } else if self.positions[index].y < -bounds.y {
+                self.positions[index].y = bounds.y;
             }
 
-            if self.positions[i].z > bounds.z {
-                self.positions[i].z = -bounds.z;
-            } else if self.positions[i].z < -bounds.z {
-                self.positions[i].z = bounds.z;
+            if self.positions[index].z > bounds.z {
+                self.positions[index].z = -bounds.z;
+            } else if self.positions[index].z < -bounds.z {
+                self.positions[index].z = bounds.z;
             }
         }
     }

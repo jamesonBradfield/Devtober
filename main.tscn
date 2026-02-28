@@ -1,6 +1,5 @@
-[gd_scene load_steps=7 format=3 uid="uid://c7t5ep2vd50mv"]
+[gd_scene format=3 uid="uid://c7t5ep2vd50mv"]
 
-[ext_resource type="ArrayMesh" uid="uid://v6ik78epu851" path="res://Meshes/boid.obj" id="2_0xm2m"]
 [ext_resource type="Script" uid="uid://cte4jalives85" path="res://addons/sk_fly_camera/src/fly_camera.gd" id="2_bo1nx"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_jjgbg"]
@@ -16,29 +15,29 @@ glow_enabled = true
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_ig7tw"]
 
-[node name="Node3D" type="Node3D"]
+[node name="Node3D" type="Node3D" unique_id=1167465124]
 metadata/_edit_vertical_guides_ = [-344.0]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=937294944]
 environment = SubResource("Environment_8gbba")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1898680824]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
 shadow_enabled = true
 
-[node name="FlyCamera" type="CharacterBody3D" parent="."]
+[node name="FlyCamera" type="CharacterBody3D" parent="." unique_id=385746559]
 script = ExtResource("2_bo1nx")
 metadata/_custom_type_script = "uid://cte4jalives85"
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="FlyCamera"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="FlyCamera" unique_id=283660387]
 shape = SubResource("SphereShape3D_ig7tw")
 
-[node name="MassRenderingNode" type="MassRenderingNode" parent="."]
+[node name="MassRenderingNode" type="MassRenderingNode" parent="." unique_id=1774717530]
 
-[node name="BoidHandler" type="BoidHandler" parent="."]
+[node name="BoidHandler" type="BoidHandler" parent="." unique_id=416883571]
 simulation_bounds = Vector3(500, 500, 500)
-count = 100
-visible_count = 100
+count = 100000
+visible_count = 100000
 alignment_weight = 2.0
 cohesion_weight = 1.6
 separation_weight = 2.0
@@ -47,7 +46,4 @@ cohesion_range = 8.0
 separation_range = 4.0
 max_speed = 20.0
 seed = 43
-debug_bvh = true
-debug_bvh_max_depth = 1
-render_node_path = NodePath("../MassRenderingNode")
-_boid_mesh = ExtResource("2_0xm2m")
+debug_bvh_max_depth = 10
