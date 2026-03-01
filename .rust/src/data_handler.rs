@@ -59,6 +59,7 @@ pub struct BoidHandler {
 
 #[godot_api]
 impl INode3D for BoidHandler {
+    #[cfg_attr(feature = "profiling", tracing::instrument)]
     fn init(base: Base<Node3D>) -> Self {
         Self {
             base,
@@ -86,6 +87,7 @@ impl INode3D for BoidHandler {
         }
     }
 
+    #[cfg_attr(feature = "profiling", tracing::instrument(skip_all))]
     fn ready(&mut self) {
         let Ok(mesh) = try_load::<ArrayMesh>("res://Meshes/boid.obj") else {
             godot_warn!("Failed to load boid mesh");
@@ -101,6 +103,7 @@ impl INode3D for BoidHandler {
         }
     }
 
+    #[cfg_attr(feature = "profiling", tracing::instrument(skip_all))]
     fn process(&mut self, delta: f64) {
         if self.positions.is_empty() || self.multimesh.is_none() {
             return;
@@ -118,6 +121,7 @@ impl INode3D for BoidHandler {
 
 #[godot_api]
 impl BoidHandler {
+    #[cfg_attr(feature = "profiling", tracing::instrument(skip_all))]
     fn setup_multimesh(&mut self) {
         if self.visible_count <= 0 {
             godot_warn!("visible_count must be greater than 0");
@@ -163,6 +167,7 @@ impl BoidHandler {
         self._multimesh_instance = Some(instance);
     }
 
+    #[cfg_attr(feature = "profiling", tracing::instrument(skip_all))]
     fn setup_debug_wireframe(&mut self) {
         let immediate_mesh = ImmediateMesh::new_gd();
         let mut material = StandardMaterial3D::new_gd();
@@ -182,6 +187,7 @@ impl BoidHandler {
         self.debug_instance = Some(mesh_instance);
     }
 
+    #[cfg_attr(feature = "profiling", tracing::instrument(skip_all))]
     fn rebuild_bvh(&mut self) {
         self.root.left = None;
         self.root.right = None;
@@ -189,6 +195,7 @@ impl BoidHandler {
         self.root.build_recursive(&self.positions, 0, 10, 4);
     }
 
+    #[cfg_attr(feature = "profiling", tracing::instrument(skip_all))]
     fn update_boids(&mut self, delta: f32) {
         // Extract thread-safe references
         let positions_ref = &self.positions;
@@ -262,7 +269,7 @@ impl BoidHandler {
             .collect();
 
         // Apply steering forces and update positions
-        for index in 0..self.positions.len() {
+        (0..self.positions.len()).for_each(|index| {
             // Calculate new velocity from current direction
             let current_vel = self.directions[index] * max_speed;
             let new_vel = current_vel + steering_forces[index] * delta;
@@ -295,9 +302,10 @@ impl BoidHandler {
             } else if self.positions[index].z < -bounds.z {
                 self.positions[index].z = bounds.z;
             }
-        }
+        });
     }
 
+    #[cfg_attr(feature = "profiling", tracing::instrument(skip_all))]
     fn render_boids(&mut self) {
         let Some(multimesh) = self.multimesh else {
             return;
@@ -332,6 +340,7 @@ impl BoidHandler {
     }
 
     #[allow(dead_code)]
+    #[cfg_attr(feature = "profiling", tracing::instrument(skip_all))]
     fn render_debug_bvh(&mut self) {
         let Some(mesh) = &mut self.debug_mesh else {
             return;
@@ -344,6 +353,7 @@ impl BoidHandler {
     }
 
     #[func]
+    #[cfg_attr(feature = "profiling", tracing::instrument(skip_all))]
     pub fn regenerate(&mut self) {
         self.root.bounds = Aabb {
             position: self.base().get_position() - self.simulation_bounds / 2.0,
@@ -367,6 +377,7 @@ impl BoidHandler {
     }
 
     #[func]
+    #[cfg_attr(feature = "profiling", tracing::instrument(skip_all))]
     pub fn toggle_debug_bvh(&mut self) {
         self.debug_bvh = !self.debug_bvh;
 
