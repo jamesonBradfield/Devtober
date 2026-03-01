@@ -18,14 +18,14 @@ shape = SubResource("SphereShape3D_ig7tw")
 
 [node name="BoidHandler" type="BoidHandler" parent="." unique_id=416883571]
 simulation_bounds = Vector3(500, 500, 500)
-count = 100000
-visible_count = 100000
+count = 10000
+visible_count = 10000
 alignment_weight = 2.0
 cohesion_weight = 1.6
 separation_weight = 2.0
 alignment_range = 10.0
 cohesion_range = 8.0
 separation_range = 4.0
-max_speed = 20.0
+max_speed = 10.0
 seed = 43
 debug_bvh_max_depth = 10
