@@ -816,6 +816,7 @@ dependencies = [
  "nalgebra",
  "rand",
  "rayon",
+ "smallvec",
  "tracing",
  "tracing-subscriber",
  "tracing-tracy",

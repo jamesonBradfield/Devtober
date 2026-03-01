@@ -18,13 +18,17 @@ config/name="DevTober"
 run/main_scene="uid://c7t5ep2vd50mv"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 
+[autoload]
+
+DebugMenu="*uid://cggqb75a8w8r"
+
 [dotnet]
 
 project/assembly_name="DevTober"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/sk_fly_camera/plugin.cfg")
+enabled=PackedStringArray("res://addons/debug_menu/plugin.cfg", "res://addons/sk_fly_camera/plugin.cfg")
 
 [physics]
 

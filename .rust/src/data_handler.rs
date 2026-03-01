@@ -12,6 +12,7 @@ use godot::{
 };
 use rand::prelude::*;
 use rayon::prelude::*;
+use smallvec::SmallVec;
 
 #[derive(GodotClass)]
 #[class(base=Node3D)]
@@ -216,9 +217,9 @@ impl BoidHandler {
                 let dir = directions_ref[i];
 
                 let max_range = sep_range.max(ali_range).max(coh_range);
-                let mut all_neighbors = Vec::new();
+                let mut all_neighbors: SmallVec<[usize; 32]> = SmallVec::new();
                 root_ref.query_range(positions_ref, pos, max_range, &mut all_neighbors);
-                all_neighbors.retain(|&idx| idx != i);
+                all_neighbors.retain(|&mut idx| idx != i);
 
                 let sep_range_sq = sep_range * sep_range;
                 let ali_range_sq = ali_range * ali_range;
@@ -268,41 +269,46 @@ impl BoidHandler {
             })
             .collect();
 
-        // Apply steering forces and update positions
-        (0..self.positions.len()).for_each(|index| {
-            // Calculate new velocity from current direction
-            let current_vel = self.directions[index] * max_speed;
-            let new_vel = current_vel + steering_forces[index] * delta;
+        let bounds = self.simulation_bounds;
 
-            // Normalize to get new direction (simpler than speed clamping!)
-            let speed = new_vel.length();
-            if speed > 0.001 {
-                self.directions[index] = new_vel / speed;
-            }
+        self.positions
+            .par_iter_mut()
+            .zip(self.directions.par_iter_mut())
+            .zip(steering_forces.par_iter())
+            .for_each(|((pos, dir), force)| {
+                // Calculate new velocity from current direction
+                // We use * to dereference the pointers and get the actual Vector3 values
+                let current_vel = *dir * max_speed;
+                let new_vel = current_vel + *force * delta;
 
-            // Move at constant max speed
-            self.positions[index] += self.directions[index] * max_speed * delta;
+                // Normalize to get new direction
+                let speed = new_vel.length();
+                if speed > 0.001 {
+                    *dir = new_vel / speed;
+                }
 
-            // Wrap around bounds
-            let bounds = self.simulation_bounds;
-            if self.positions[index].x > bounds.x {
-                self.positions[index].x = -bounds.x;
-            } else if self.positions[index].x < -bounds.x {
-                self.positions[index].x = bounds.x;
-            }
+                // Move at constant max speed
+                *pos += *dir * max_speed * delta;
 
-            if self.positions[index].y > bounds.y {
-                self.positions[index].y = -bounds.y;
-            } else if self.positions[index].y < -bounds.y {
-                self.positions[index].y = bounds.y;
-            }
+                // Wrap around bounds
+                if pos.x > bounds.x {
+                    pos.x = -bounds.x;
+                } else if pos.x < -bounds.x {
+                    pos.x = bounds.x;
+                }
 
-            if self.positions[index].z > bounds.z {
-                self.positions[index].z = -bounds.z;
-            } else if self.positions[index].z < -bounds.z {
-                self.positions[index].z = bounds.z;
-            }
-        });
+                if pos.y > bounds.y {
+                    pos.y = -bounds.y;
+                } else if pos.y < -bounds.y {
+                    pos.y = bounds.y;
+                }
+
+                if pos.z > bounds.z {
+                    pos.z = -bounds.z;
+                } else if pos.z < -bounds.z {
+                    pos.z = bounds.z;
+                }
+            });
     }
 
     #[cfg_attr(feature = "profiling", tracing::instrument(skip_all))]

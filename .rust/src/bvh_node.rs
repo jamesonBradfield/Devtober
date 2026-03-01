@@ -1,5 +1,5 @@
 use godot::{builtin::Aabb, classes::ImmediateMesh, prelude::*};
-
+use smallvec::SmallVec;
 pub struct BVHNode {
     pub bounds: Aabb,
     pub left: Option<Box<BVHNode>>,
@@ -131,7 +131,7 @@ impl BVHNode {
         positions: &[Vector3],
         pos: Vector3,
         radius: f32,
-        results: &mut Vec<usize>,
+        results: &mut SmallVec<[usize; 32]>,
     ) {
         if !Self::aabb_intersects_sphere(&self.bounds, pos, radius) {
             return;
