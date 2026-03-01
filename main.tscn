@@ -2,28 +2,10 @@
 
 [ext_resource type="Script" uid="uid://cte4jalives85" path="res://addons/sk_fly_camera/src/fly_camera.gd" id="2_bo1nx"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_jjgbg"]
-sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
-ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
-
-[sub_resource type="Sky" id="Sky_bo1nx"]
-sky_material = SubResource("ProceduralSkyMaterial_jjgbg")
-
-[sub_resource type="Environment" id="Environment_8gbba"]
-sky = SubResource("Sky_bo1nx")
-glow_enabled = true
-
 [sub_resource type="SphereShape3D" id="SphereShape3D_ig7tw"]
 
 [node name="Node3D" type="Node3D" unique_id=1167465124]
 metadata/_edit_vertical_guides_ = [-344.0]
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=937294944]
-environment = SubResource("Environment_8gbba")
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1898680824]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
-shadow_enabled = true
 
 [node name="FlyCamera" type="CharacterBody3D" parent="." unique_id=385746559]
 script = ExtResource("2_bo1nx")

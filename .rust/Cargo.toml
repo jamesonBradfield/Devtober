@@ -6,8 +6,6 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-bvh = "0.11.0"
-flamegraph = "0.6.9"
 godot = "0.3.1"
 nalgebra = "0.34.1"
 rand = "0.9.2"

@@ -17,12 +17,6 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 config/name="DevTober"
 run/main_scene="uid://c7t5ep2vd50mv"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
-config/icon="res://icon.svg"
-
-[autoload]
-
-GodotLogger="*res://Scripts/GodotLogger.cs"
-DebugMenu="*res://addons/debug_menu/debug_menu.tscn"
 
 [dotnet]
 
@@ -30,7 +24,7 @@ project/assembly_name="DevTober"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg", "res://addons/sk_fly_camera/plugin.cfg")
+enabled=PackedStringArray("res://addons/sk_fly_camera/plugin.cfg")
 
 [physics]
 
